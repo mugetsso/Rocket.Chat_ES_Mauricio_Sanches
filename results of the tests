@@ -1,0 +1,239 @@
+**Step-by-Step - Deploy of Rocket.Chat and API Interaction:**
+
+1. **Docker Desktop Installation:**
+   - Downloaded Docker Desktop from the official website (https://www.docker.com/products/docker-desktop) and followed the installation instructions for Windows using WSL (Ubuntu).
+
+2. **MongoDB Configuration with Docker:**
+   - Opened the PowerShell terminal and executed the command to create a MongoDB container:
+     ```bash
+     docker run -d --name mongo-container -p 27017:27017 mongo
+     ```
+     MongoDB Docker Container
+  3. **Rocket.Chat Installation with Docker:**
+   - Executed the command to create a Rocket.Chat container and link it to the MongoDB container:
+     ```bash
+     docker run -d --name rocketchat-container -p 3000:3000 --link mongo-container:mongo rocket.chat
+     ```
+     Rocket.Chat Docker Container
+  
+4. **Troubleshooting WSL and MongoDB Issues:**
+   - Encountered a connection issue between WSL and MongoDB. Used the `docker inspect mongo-container` command to obtain the MongoDB's IP address and adjusted the WSL configuration to connect using that IP.
+      The adjustment was made in the docker-compose.yml:
+        
+"environment:
+      - MONGO_URL=mongodb://mongo:27017/rocketchat
+    networks:
+      - my-network
+
+  mongo:
+    image: mongo
+    networks:
+      - my-network
+
+networks:
+  my-network:"
+
+5. **Access to Rocket.Chat and Initial Configuration:**
+   - Opened a browser and accessed `http://localhost:3000`. Followed the instructions to set up the Rocket.Chat administrator.
+
+6. **Resolution of "Bind for 0.0.0.0:3000 failed: port is already allocated" Error:**
+   - Discovered that port 3000 was in use by another service. Adjusted the port in the Docker command to resolve the issue.
+  
+7. **Creation of a New User via API:**
+   - Used cURL to create a new user via API, utilizing the administrator's token and ID:
+      Postman collection link: [Postman Collection](https://elements.getpostman.com/redirect?entityId=16496781-6327d857-d1e1-458a-92f1-6c95f438007f&entityType=collection)
+  
+Method : POST http://localhost:3000/api/v1/users.create   
+
+Headers - [{"key":"X-Auth-Token","value":"WYxot4x3WO9mm-sJG3_fFUPDeQCplc4rMKPoaHrBjJq","type":"text","enabled":true},
+        {"key":"X-User-Id","value":"ebAtpSqwyFLyetK8S","type":"text","enabled":true},
+        {"key":"Content-type","value":"application/json","type":"text","enabled":true}]
+
+Body-  
+{
+  "email": "novousuario@example.com",
+  "name": "Nome do Usuário",
+  "password": "senha123",
+  "username": "nomeuniquedousuario",
+  "active": true,
+  "bio": "Enginer|GitHub Star",
+  "nickname": "apelidodousuario",
+  "statusText": "Online",
+  "joinDefaultChannels": false,
+  "requirePasswordChange": false,
+  "setRandomPassword": false,
+  "verified": true
+}
+
+Return - 200
+
+{
+    "user": {
+        "_id": "vRN5ZHs4ptB3X53kX",
+        "createdAt": "2024-01-15T15:55:57.855Z",
+        "username": "nomeuniquedousuario",
+        "emails": [
+            {
+                "address": "novousuario@example.com",
+                "verified": true
+            }
+        ],
+        "type": "user",
+        "roles": [
+            "user"
+        ],
+        "status": "offline",
+        "active": true,
+        "_updatedAt": "2024-01-15T15:55:58.165Z",
+        "bio": "Enginer|GitHub Star",
+        "name": "Nome do Usuário",
+        "nickname": "apelidodousuario",
+        "requirePasswordChange": false,
+        "settings": {}
+    },
+    "success": true
+}
+
+8. **Querying Room Information via API:**
+   - Used cURL to obtain information about a specific room:
+      Postman collection link: [Postman Collection](https://elements.getpostman.com/redirect?entityId=16496781-6327d857-d1e1-458a-92f1-6c95f438007f&entityType=collection)
+
+Method: GET http://localhost:3000/api/v1/rooms.info?roomName=general
+
+Headers - [{"key":"X-Auth-Token","value":"WYxot4x3WO9mm-sJG3_fFUPDeQCplc4rMKPoaHrBjJq","type":"text","enabled":true,"equals":true},
+    {"key":"X-User-Id","value":"ebAtpSqwyFLyetK8S","type":"text","enabled":true,"equals":true}]
+
+Return - 200
+{
+    "room": {
+        "_id": "GENERAL",
+        "ts": "2024-01-15T04:16:26.590Z",
+        "t": "c",
+        "name": "general",
+        "usernames": [],
+        "msgs": 1,
+        "usersCount": 1,
+        "_updatedAt": "2024-01-15T04:25:46.033Z",
+        "u": {
+            "_id": "rocket.cat",
+            "username": "rocket.cat",
+            "name": "Rocket.Cat"
+        },
+        "default": true
+    },
+    "success": true
+}
+
+9. **Querying List of User Roles via API:**
+      Postman collection link: [Postman Collection](https://elements.getpostman.com/redirect?entityId=16496781-6327d857-d1e1-458a-92f1-6c95f438007f&entityType=collection)
+
+Method: GET http://localhost:3000/api/v1/roles.list
+
+Headers - [{"key":"X-Auth-Token","value":"WYxot4x3WO9mm-sJG3_fFUPDeQCplc4rMKPoaHrBjJq","type":"text","enabled":true,"equals":true},
+    {"key":"X-User-Id","value":"ebAtpSqwyFLyetK8S","type":"text","enabled":true,"equals":true}]
+
+Return - 200
+{
+    "roles": [
+        {
+            "_id": "admin",
+            "scope": "Users",
+            "description": "Admin",
+            "mandatory2fa": false,
+            "name": "admin",
+            "protected": true
+        },
+        {
+            "_id": "moderator",
+            "scope": "Subscriptions",
+            "description": "Moderator",
+            "mandatory2fa": false,
+            "name": "moderator",
+            "protected": true
+        },
+        {
+            "_id": "leader",
+            "scope": "Subscriptions",
+            "description": "Leader",
+            "mandatory2fa": false,
+            "name": "leader",
+            "protected": true
+        },
+        {
+            "_id": "owner",
+            "scope": "Subscriptions",
+            "description": "Owner",
+            "mandatory2fa": false,
+            "name": "owner",
+            "protected": true
+        },
+        {
+            "_id": "user",
+            "scope": "Users",
+            "description": "",
+            "mandatory2fa": false,
+            "name": "user",
+            "protected": true
+        },
+        {
+            "_id": "bot",
+            "scope": "Users",
+            "description": "",
+            "mandatory2fa": false,
+            "name": "bot",
+            "protected": true
+        },
+        {
+            "_id": "app",
+            "scope": "Users",
+            "description": "",
+            "mandatory2fa": false,
+            "name": "app",
+            "protected": true
+        },
+        {
+            "_id": "guest",
+            "scope": "Users",
+            "description": "",
+            "mandatory2fa": false,
+            "name": "guest",
+            "protected": true
+        },
+        {
+            "_id": "anonymous",
+            "scope": "Users",
+            "description": "",
+            "mandatory2fa": false,
+            "name": "anonymous",
+            "protected": true
+        },
+        {
+            "_id": "livechat-agent",
+            "scope": "Users",
+            "description": "Livechat Agent",
+            "mandatory2fa": false,
+            "name": "livechat-agent",
+            "protected": true
+        },
+        {
+            "_id": "livechat-manager",
+            "scope": "Users",
+            "description": "Livechat Manager",
+            "mandatory2fa": false,
+            "name": "livechat-manager",
+            "protected": true
+        },
+        {
+            "_id": "livechat-monitor",
+            "scope": "Users",
+            "description": "",
+            "mandatory2fa": false,
+            "name": "livechat-monitor",
+            "protected": true
+        }
+    ],
+    "success": true
+}
+
+10. **Conclusion:**
+    - Completed the Rocket.Chat deployment process, troubleshooting, user creation via API, and information retrieval using the API. The environment is ready for evaluation.
